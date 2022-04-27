@@ -36,18 +36,7 @@ jobs:
     name: Auto Build Bicep
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2.3.4
-        with:
-          fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
-
       - uses: dciborow/auto-build-bicep@v1
-        with:
-          github_token: ${{ secrets.github_token }}
-          # Change reviewdog reporter if you need [github-pr-check,github-check,github-pr-review].
-          reporter: github-pr-review
-          # Change reporter level if you need.
-          # GitHub Status Check won't become failure with warning.
-          level: warning
 ```
 
 ## Development
