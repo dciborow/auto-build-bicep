@@ -1,12 +1,12 @@
-# action-pylint
-[![Test](https://github.com/dciborow/action-pylint/workflows/Test/badge.svg)](https://github.com/dciborow/action-pylint/actions?query=workflow%3ATest)
-[![reviewdog](https://github.com/dciborow/action-pylint/workflows/reviewdog/badge.svg)](https://github.com/dciborow/action-pylint/actions?query=workflow%3Areviewdog)
-[![depup](https://github.com/dciborow/action-pylint/workflows/depup/badge.svg)](https://github.com/dciborow/action-pylint/actions?query=workflow%3Adepup)
-[![release](https://github.com/dciborow/action-pylint/workflows/release/badge.svg)](https://github.com/dciborow/action-pylint/actions?query=workflow%3Arelease)
-[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/dciborow/action-pylint?logo=github&sort=semver)](https://github.com/dciborow/action-pylint/releases)
+# auto-build-bicep
+[![Test](https://github.com/dciborow/auto-build-bicep/workflows/Test/badge.svg)](https://github.com/dciborow/auto-build-bicep/actions?query=workflow%3ATest)
+[![reviewdog](https://github.com/dciborow/auto-build-bicep/workflows/reviewdog/badge.svg)](https://github.com/dciborow/auto-build-bicep/actions?query=workflow%3Areviewdog)
+[![depup](https://github.com/dciborow/auto-build-bicep/workflows/depup/badge.svg)](https://github.com/dciborow/auto-build-bicep/actions?query=workflow%3Adepup)
+[![release](https://github.com/dciborow/auto-build-bicep/workflows/release/badge.svg)](https://github.com/dciborow/auto-build-bicep/actions?query=workflow%3Arelease)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/dciborow/auto-build-bicep?logo=github&sort=semver)](https://github.com/dciborow/auto-build-bicep/releases)
 [![action-bumpr supported](https://img.shields.io/badge/bumpr-supported-ff69b4?logo=github&link=https://github.com/haya14busa/action-bumpr)](https://github.com/haya14busa/action-bumpr)
 
-This repo contains a action to run [pylint](https://pypi.org/project/pylint).
+This repo contains a action to run [bicep](https://pypi.org/project/bicep).
 
 ## Input
 
@@ -18,40 +18,29 @@ inputs:
   workdir:
     description: 'Working directory relative to the root directory.'
     default: '.'
-  ### Flags for reviewdog ###
-  level:
-    description: 'Report level for reviewdog [info,warning,error]'
-    default: 'error'
-  reporter:
-    description: 'Reporter of reviewdog command [github-pr-check,github-check,github-pr-review].'
-    default: 'github-pr-check'
-  filter_mode:
-    description: |
-      Filtering mode for the reviewdog command [added,diff_context,file,nofilter].
-      Default is added.
-    default: 'added'
-  fail_on_error:
-    description: |
-      Exit code for reviewdog when errors are found [true,false]
-      Default is `false`.
-    default: 'false'
-  reviewdog_flags:
-    description: 'Additional reviewdog flags'
-    default: ''
 ```
 
 ## Usage
 
 ```yaml
-name: reviewdog
-on: [pull_request]
+name: Auto Build Bicep
+on:
+  push:
+    branches-ignore:
+      - master
+    paths:
+      - '**.bicep'
+      - '!**azuredeploy.json'
 jobs:
-  pylint:
-    name: runner / pylint
+  main:
+    name: Auto Build Bicep
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: dciborow/action-pylint@v1
+      - uses: actions/checkout@v2.3.4
+        with:
+          fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
+
+      - uses: dciborow/auto-build-bicep@v1
         with:
           github_token: ${{ secrets.github_token }}
           # Change reviewdog reporter if you need [github-pr-check,github-check,github-pr-review].
@@ -90,5 +79,3 @@ Supported linters:
 ### Dependencies Update Automation
 This repository uses [reviewdog/action-depup](https://github.com/reviewdog/action-depup) to update
 reviewdog version.
-
-[![reviewdog depup demo](https://user-images.githubusercontent.com/3797062/73154254-170e7500-411a-11ea-8211-912e9de7c936.png)](https://github.com/reviewdog/action-template/pull/6)
