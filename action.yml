@@ -58,13 +58,11 @@ runs:
     - name: Build main.bicep -> azuredeploy.json
       uses: Azure/cli@v1
       with:
-        # Specify the script here
         inlineScript: |
           if [ -f $MAINBICEP_PATH ]; then          
             echo Running: az bicep build --file $MAINBICEP_PATH --outfile $AZDEPLOYJSON_PATH
             az bicep build --file $MAINBICEP_PATH --outfile $AZDEPLOYJSON_PATH
           fi
-
 
     - name: Commit changes
       if: always()
