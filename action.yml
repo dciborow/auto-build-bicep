@@ -1,5 +1,5 @@
-name: 'Run Pylint with reviewdog'
-description: '🐶 Run Pylint with reviewdog on pull requests to improve code review experience.'
+name: 'Auto  Build Bicep'
+description: 'Auto build .bicep files into arm templates in a repo.'
 author: 'dciborow'
 inputs:
   github_token:
@@ -8,45 +8,75 @@ inputs:
   workdir:
     description: 'Working directory relative to the root directory.'
     default: '.'
-  ### Flags for reviewdog ###
-  level:
-    description: 'Report level for reviewdog [info,warning,error]'
-    default: 'error'
-  reporter:
-    description: 'Reporter of reviewdog command [github-pr-check,github-pr-review].'
-    default: 'github-pr-check'
-  filter_mode:
-    description: |
-      Filtering mode for the reviewdog command [added,diff_context,file,nofilter].
-      Default is added.
-    default: 'added'
-  fail_on_error:
-    description: |
-      Exit code for reviewdog when errors are found [true,false]
-      Default is `false`.
-    default: 'false'
-  reviewdog_flags:
-    description: 'Additional reviewdog flags'
-    default: ''
-  pylint_rc:
-    description: '.pylintrc configuration file'
-    default: '.pylintrc'
+
 runs:
   using: "composite"
   steps:
-    - run: $GITHUB_ACTION_PATH/entrypoint.sh
-      shell: bash
-      env:
-        INPUT_WORKDIR: ${{ inputs.workdir }}
-        INPUT_FLAKE8_ARGS: ${{ inputs.flake8_Args }}
-        INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
-        INPUT_TOOL_NAME: ${{ inputs.tool_name }}
-        INPUT_LEVEL: ${{ inputs.level }}
-        INPUT_REPORTER: ${{ inputs.reporter }}
-        INPUT_FILTER_MODE: ${{ inputs.filter_mode }}
-        INPUT_FAIL_ON_ERROR: ${{ inputs.fail_on_error }}
-        INPUT_REVIEWDOG_FLAGS: ${{ inputs.reviewdog_flags }}
-        INPUT_PYLINT_RC: ${{ inputs.pylint_rc }}
+  - name: Find folder
+    shell: bash
+    run: |
+      git status
+      # Get path of last file checked in
+      pwd
+      cd $GITHUB_WORKSPACE
+      pwd
+      LAST_PATH=$( git log --pretty="" --name-only -n 100 origin/master... -- | fgrep -v ".github" | head -1 )
+      echo Last file modified: $LAST_PATH
+
+      # Look for the main template file in this file's path or parents
+      SAMPLEFOLDER_PATH=$( dirname "$LAST_PATH" )
+      echo Last folder modified: $SAMPLEFOLDER_PATH
+
+      TESTFOLDER_PATH=$SAMPLEFOLDER_PATH
+      FOUNDFOLDER_PATH=
+      while [ "$TESTFOLDER_PATH" != "." ]
+      do
+        echo "Looking for main template in $TESTFOLDER_PATH"
+        MAINBICEP_PATH=$TESTFOLDER_PATH/main.bicep
+        AZDEPLOYJSON_PATH=$TESTFOLDER_PATH/azuredeploy.json
+        if [ -f "$MAINBICEP_PATH" ] || [ -f "$AZDEPLOYJSON_PATH" ]; then
+          FOUNDFOLDER_PATH=$TESTFOLDER_PATH
+          echo Found main template in $FOUNDFOLDER_PATH
+          break
+        fi
+
+        TESTFOLDER_PATH=$( dirname "$TESTFOLDER_PATH" )
+      done
+
+      if [ ! $FOUNDFOLDER_PATH ]; then
+          echo "Could not find main.bicep or azdeploy.json in folder or parents of $SAMPLEFOLDER_PATH" 1>&2
+          exit 1
+      fi
+
+      echo "SAMPLEFOLDER_PATH=$FOUNDFOLDER_PATH" >> $GITHUB_ENV
+      echo "MAINBICEP_PATH=$MAINBICEP_PATH" >> $GITHUB_ENV
+      echo "AZDEPLOYJSON_PATH=$AZDEPLOYJSON_PATH" >> $GITHUB_ENV    
+
+  - name: Build main.bicep -> azuredeploy.json
+    uses: Azure/cli@v1
+    with:
+      # Specify the script here
+      inlineScript: |
+        if [ -f $MAINBICEP_PATH ]; then          
+          echo Running: az bicep build --file $MAINBICEP_PATH --outfile $AZDEPLOYJSON_PATH
+          az bicep build --file $MAINBICEP_PATH --outfile $AZDEPLOYJSON_PATH
+        fi
+
+
+  - name: Commit changes
+    if: always()
+    shell: bash
+    run: |
+      git config --global user.email "azure-quickstart-templates@noreply.github.com"
+      git config --global user.name "azure-quickstart-templates Automation"
+
+      git add $SAMPLEFOLDER_PATH
+
+      if ! git diff-index --quiet HEAD --; then
+        git commit -m "Automatic fixes"
+        git push origin ${GITHUB_REF##*/}
+      fi
+  
 
 # Ref: https://haya14busa.github.io/github-action-brandings/
 # TODO: update branding if you want.
