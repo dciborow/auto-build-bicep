@@ -12,6 +12,7 @@ jobs:
       matrix:
         python-version: [3.7]
     steps:
+      - uses: actions/checkout@v2.3.4
       - uses: ./
         with:
           workdir: ./testdata/
@@ -24,6 +25,7 @@ jobs:
       matrix:
         python-version: [3.7]
     steps:
+      - uses: actions/checkout@v2.3.4
       - uses: ./
         with:
           workdir: ./testdata/
@@ -33,6 +35,7 @@ jobs:
     name: runner / bicep (github-pr-review)
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2.3.4
       - uses: ./
         with:
           workdir: ./testdata/
