@@ -5,6 +5,8 @@ inputs:
   github_token:
     description: 'GITHUB_TOKEN'
     default: '${{ github.token }}'
+  github_ref:
+    defualt: '${{ github.ref }}'
   workdir:
     description: 'Working directory relative to the root directory.'
     default: '.'
@@ -75,9 +77,8 @@ runs:
 
         if ! git diff-index --quiet HEAD --; then
           git commit -m "Automatic fixes"
-          git push origin ${GITHUB_REF##*/}
+          git push origin ${${{ inputs.github_ref }}##*/}
         fi
-
 
 # Ref: https://haya14busa.github.io/github-action-brandings/
 # TODO: update branding if you want.
